@@ -80,7 +80,7 @@ def read_current_version():
     """
     Read the current version number from version.txt.
     """
-    print("📖 Reading current version from version.txt...")
+    print("\n📖 Reading current version from version.txt...")
     with open(VERSION_FILE, "r") as f:
         version = f.readline().strip()
     print(f"✅ Current version found: {version}")
@@ -90,6 +90,7 @@ def calculate_next_version(current_version):
     """
     Given the current version in format 'XXX.Y', return the next version.
     Increments Y up to 3, then rolls over to (XXX+1).0.
+    Prompt if a different next version is wanted
     """
     print("🔢 Calculating next version...")
     major, minor = map(int, current_version.split("."))
@@ -97,15 +98,40 @@ def calculate_next_version(current_version):
         next_version = f"{major}.{minor + 1}"
     else:
         next_version = f"{major + 1}.0"
-    print(f"✅ Next version will be: {next_version}")
-    return next_version
+    print(f"✅ Calculated next version will be: {next_version}")
+    print(f"\n❓ Would you like to specify a different version for the next version? (y/N): ", end="")
+    choice = input().strip().lower()
+
+    if choice != "y":
+        return next_version
+
+    while True:
+        print(f"Input a version in the format major.minor (Example: 150.2)\n: ", end="")
+        version_input = input().strip()
+        # Check that a valid version number was specified
+        if is_valid_version(version_input):
+            print(f"✅ Next version will be: {version_input}")
+            return version_input
+
+        print("❌ Invalid version format. Please use numeric format like '150.2'.")
+
+def is_valid_version(version: str) -> bool:
+    """
+    Check if a input version is a valid format number.number
+    """
+    parts = version.split(".")
+    if len(parts) != 2:
+        return False
+
+    major, minor = parts
+    return major.isdigit() and minor.isdigit()
 
 def create_release_branch(current_version):
     """
     Create a new release branch from main named release/vXXX.Y.
     """
     branch_name = f"{RELEASE_BRANCH_PREFIX}v{current_version}"
-    print(f"🌿 Creating branch: {branch_name} from 'main'...")
+    print(f"\n🌿 Creating branch: {branch_name} from 'main'...")
     run_git_command("checkout", "-b", branch_name)
     print(f"✅ Branch {branch_name} created successfully.")
     return branch_name
@@ -114,7 +140,7 @@ def bump_version(next_version):
     """
     Update version.txt to the next version and commit the change on main.
     """
-    print(f"✏️ Bumping version in 'main' to {next_version}...")
+    print(f"\n✏️ Bumping version in 'main' to {next_version}...")
     run_git_command("checkout", "main")
     with open(VERSION_FILE, "w") as f:
         f.write(f"{next_version}\n")
@@ -127,7 +153,7 @@ def prompt_and_push(branch_name):
     Ask the user whether to push the new release branch and updated main.
     If yes, perform the push. If not, print manual commands.
     """
-    print(f"\nWould you like to push the new release branch and updated 'main' to origin? (y/N): ", end="")
+    print(f"\n❓ Would you like to push the new release branch and updated 'main' to origin? (y/N): ", end="")
     choice = input().strip().lower()
 
     if choice == "y":
